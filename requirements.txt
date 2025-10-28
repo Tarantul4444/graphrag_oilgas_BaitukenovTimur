@@ -1,0 +1,29 @@
+# --- Base ---
+pandas
+numpy
+langchain
+faiss-cpu
+networkx
+sentence-transformers
+openai
+rouge-score
+nltk
+
+# --- PDF and text processing ---
+PyPDF2
+langdetect
+pytesseract
+pdf2image
+pillow
+
+# --- Jupyter and ipynb ---
+jupyter
+notebook
+ipykernel
+nbformat
+nbconvert
+
+# --- Optional utilities ---
+tika
+beautifulsoup4
+pdfkit
