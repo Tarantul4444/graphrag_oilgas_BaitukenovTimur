@@ -59,6 +59,29 @@ def call_llm_gemini(system_prompt: str,
         return f"[ERROR calling Gemini: {e}]"
 
 
+def call_llm_huggingface(system_prompt: str, user_prompt: str,
+                                model_name="HuggingFaceH4/zephyr-7b-beta",
+                                max_tokens=400, temperature=0.7):
+    from openai import OpenAI
+    import os
+
+    client = OpenAI(
+        base_url="https://router.huggingface.co/v1",
+        api_key=os.getenv("HG_API_KEY"),
+    )
+
+    completion = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    return completion.choices[0].message.content.strip()
+
+
 
 def call_llm_local_stub(system_prompt: str,
                         user_prompt: str,
@@ -166,6 +189,9 @@ def main():
     elif provider == "openai":
         llm = lambda q, c: call_llm_openai(PROMPT_SYS, PROMPT_USER_TMPL.format(q=q, ctx=c),
                                            model_name, max_tokens, temperature)
+    elif provider == "huggingface":
+        llm = lambda q,c: call_llm_huggingface(PROMPT_SYS, PROMPT_USER_TMPL.format(q=q, ctx=c),
+                                          model_name, max_tokens, temperature)
     else:
         llm = lambda q, c: call_llm_local_stub(PROMPT_SYS, PROMPT_USER_TMPL.format(q=q, ctx=c))
 

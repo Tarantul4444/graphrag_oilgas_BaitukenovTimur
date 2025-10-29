@@ -48,6 +48,29 @@ def call_llm_gemini(system_prompt, user_prompt, model_name="gemini-1.5-flash",
     except Exception as e:
         return f"[ERROR calling Gemini: {e}]"
 
+def call_llm_huggingface(system_prompt: str, user_prompt: str,
+                                model_name="HuggingFaceH4/zephyr-7b-beta",
+                                max_tokens=400, temperature=0.7):
+    from openai import OpenAI
+    import os
+
+    client = OpenAI(
+        base_url="https://router.huggingface.co/v1",
+        api_key=os.getenv("HG_API_KEY"),
+    )
+
+    completion = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    return completion.choices[0].message.content.strip()
+
+
 def call_llm_local_stub(system_prompt, user_prompt, **_):
     return (user_prompt[:1200] + "\n\n[local stub: replace with OpenAI/Gemini]").strip()
 
@@ -107,7 +130,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="RAG + Graph k-hop pipeline (CLI)")
     ap.add_argument("--q", "--query", dest="query", required=True, help="Вопрос пользователя")
     ap.add_argument("--config", default=str(BASE_DIR / "config.yaml"), help="Путь к config.yaml")
-    ap.add_argument("--provider", choices=["auto","openai","gemini","local"], default="auto",
+    ap.add_argument("--provider", choices=["auto","openai","gemini","huggingface","local"], default="auto",
                     help="Перекрыть провайдера модели (иначе из config.yaml)")
     ap.add_argument("--raw", action="store_true", help="Печатать только текст ответа (для eval)")
     args = ap.parse_args(argv)
@@ -139,6 +162,9 @@ def main(argv=None):
                                           model_name, max_tokens, temperature)
     elif provider == "gemini":
         llm = lambda q,c: call_llm_gemini(prompt_sys, PROMPT_USER_TMPL.format(q=q, ctx=c),
+                                          model_name, max_tokens, temperature)
+    elif provider == "huggingface":
+        llm = lambda q,c: call_llm_huggingface(prompt_sys, PROMPT_USER_TMPL.format(q=q, ctx=c),
                                           model_name, max_tokens, temperature)
     else:
         llm = lambda q,c: call_llm_local_stub(prompt_sys, PROMPT_USER_TMPL.format(q=q, ctx=c))
