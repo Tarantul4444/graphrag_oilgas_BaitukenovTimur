@@ -1,0 +1,1 @@
+BLEU=0.021  ROUGE-L=0.190  Cosine=0.722

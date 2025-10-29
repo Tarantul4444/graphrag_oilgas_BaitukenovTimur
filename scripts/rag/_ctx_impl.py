@@ -1,8 +1,14 @@
 # scripts/rag/_ctx_impl.py
-import json, pickle, re
+import json, pickle, re, os
+from dotenv import load_dotenv
 from pathlib import Path
 import numpy as np, pandas as pd, faiss
 from sentence_transformers import SentenceTransformer
+
+VERBOSE = os.getenv("RAG_VERBOSE", "0") == "1"
+def _log(msg):
+    if VERBOSE:
+        print(msg)
 
 # ---------------- CACHES (singletons) ----------------
 _CACHE = {
@@ -51,15 +57,15 @@ def _ensure_model(cfg):
     # load fresh
     for m in [want] + [x for x in FALLBACK_MODELS if x != want]:
         try:
-            print(f"🔹 Loading retrieval model: {m}")
+            _log(f"[x] Loading retrieval model: {m}")
             _CACHE["model"] = SentenceTransformer(m)
             _CACHE["model_name"] = m
             break
         except Exception as e:
-            print(f"⚠️  Cannot load model '{m}': {e}")
+            _log(f"[WARN]  Cannot load model '{m}': {e}")
             _CACHE["model"] = None
     if _CACHE["model"] is None:
-        raise RuntimeError("❌ None of the retrieval models could be loaded.")
+        raise RuntimeError("[ERROR] None of the retrieval models could be loaded.")
     return _CACHE["model"]
 
 def _ensure_index(path: str):
